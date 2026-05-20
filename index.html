@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>多功能数据记录器</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary-color: #4EC9B0;
+      --secondary-color: #3794FF;
+      --accent-color: #CE9178;
+      --bg-color: #1E1E1E;
+      --bg-secondary: #252526;
+      --bg-tertiary: #2D2D30;
+      --card-bg: #252526;
+      --text-color: #D4D4D4;
+      --text-secondary: #808080;
+      --text-bright: #FFFFFF;
+      --border-color: #3C3C3C;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.4);
+      --hover-bg: #2A2D2E;
+      --selection-bg: #264F78;
+    }
+
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      min-height: 100vh;
+      display: flex;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* 侧边栏样式 */
+    .sidebar {
+      width: 280px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 100;
+    }
+
+    .sidebar-header {
+      padding: 1.5rem;
+      background: var(--bg-tertiary);
+      color: var(--text-bright);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sidebar-header h1 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+    }
+
+    .data-type-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .data-type-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 0.75rem;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+      background: transparent;
+      color: var(--text-color);
+    }
+
+    .data-type-item:hover {
+      background: var(--hover-bg);
+    }
+
+    .data-type-item.active {
+      background: var(--selection-bg);
+      color: var(--text-bright);
+    }
+
+    .data-type-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .data-type-emoji {
+      font-size: 1.25rem;
+    }
+
+    .data-type-name {
+      font-weight: 400;
+      color: inherit;
+    }
+
+    .data-type-unit {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .data-type-actions {
+      display: flex;
+      gap: 0.125rem;
+    }
+
+    .add-data-type-btn {
+      width: 100%;
+      padding: 0.6rem;
+      border: 1px dashed var(--border-color);
+      border-radius: 0.375rem;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .add-data-type-btn:hover {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+      background: rgba(78, 201, 176, 0.1);
+    }
+
+    /* 主内容区域 */
+    .main-content {
+      flex: 1;
+      margin-left: 280px;
+      min-height: 100vh;
+    }
+
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .header-title {
+      font-size: 1.3rem;
+      font-weight: 500;
+      color: var(--text-bright);
+    }
+
+    .header-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.5rem 2rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (min-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (min-width: 1200px) {
+      .grid {
+        grid-template-columns: 1fr 2fr;
+      }
+    }
+
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      padding: 1.25rem;
+      transition: all 0.2s ease;
+    }
+
+    .card:hover {
+      border-color: #4A4A4A;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      color: var(--text-bright);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.625rem 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: 0.25rem;
+      font-size: 0.9rem;
+      transition: all 0.15s ease;
+      font-family: inherit;
+      background: var(--bg-color);
+      color: var(--text-bright);
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(78, 201, 176, 0.2);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 0.25rem;
+      font-size: 0.85rem;
+      font-weight: 400;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: var(--primary-color);
+      color: #1E1E1E;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.1);
+    }
+
+    .btn-danger {
+      background-color: #F14C4C;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background-color: #E0392D;
+    }
+
+    .btn-sm {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.75rem;
+    }
+
+    .btn-icon {
+      padding: 0.375rem;
+      background: transparent;
+      color: var(--text-secondary);
+      border-radius: 0.25rem;
+    }
+
+    .btn-icon:hover {
+      background: var(--hover-bg);
+      color: var(--text-bright);
+    }
+
+    .btn-icon-danger:hover {
+      color: #F14C4C;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+
+    .stat-card {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-bright);
+      padding: 0.875rem;
+      border-radius: 0.375rem;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .chart-container {
+      position: relative;
+      height: 280px;
+      width: 100%;
+    }
+
+    .chart-tabs {
+      display: flex;
+      gap: 0.375rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .chart-tab {
+      padding: 0.4rem 0.75rem;
+      border: 1px solid var(--border-color);
+      background: transparent;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.15s ease;
+      color: var(--text-color);
+    }
+
+    .chart-tab.active {
+      background: var(--primary-color);
+      color: #1E1E1E;
+      border-color: var(--primary-color);
+    }
+
+    .chart-tab:hover:not(.active) {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+
+    .record-list {
+      max-height: 350px;
+      overflow-y: auto;
+    }
+
+    .record-list::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .record-list::-webkit-scrollbar-track {
+      background: var(--bg-color);
+    }
+
+    .record-list::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 4px;
+    }
+
+    .record-list::-webkit-scrollbar-thumb:hover {
+      background: #4A4A4A;
+    }
+
+    .record-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.875rem;
+      border-bottom: 1px solid var(--border-color);
+      transition: background-color 0.15s ease;
+    }
+
+    .record-item:last-child {
+      border-bottom: none;
+    }
+
+    .record-item:hover {
+      background-color: var(--hover-bg);
+    }
+
+    .record-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .record-date {
+      font-weight: 400;
+      color: var(--text-color);
+      font-size: 0.85rem;
+    }
+
+    .record-value {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--primary-color);
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+    }
+
+    .record-note {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .record-actions {
+      display: flex;
+      gap: 0.375rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2.5rem;
+      color: var(--text-secondary);
+    }
+
+    .empty-state-icon {
+      font-size: 3rem;
+      margin-bottom: 0.75rem;
+      opacity: 0.4;
+    }
+
+    /* 模态框样式 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.15s ease;
+    }
+
+    .modal-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      padding: 1.25rem;
+      width: 90%;
+      max-width: 450px;
+      transform: scale(0.95);
+      transition: transform 0.15s ease;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .modal-overlay.show .modal {
+      transform: scale(1);
+    }
+
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      color: var(--text-bright);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+      margin-top: 1rem;
+    }
+
+    .btn-cancel {
+      background-color: var(--bg-tertiary);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-cancel:hover {
+      background-color: var(--hover-bg);
+      color: var(--text-bright);
+    }
+
+    .trend-up {
+      color: #4EC9B0;
+    }
+
+    .trend-down {
+      color: #F14C4C;
+    }
+
+    .trend-neutral {
+      color: var(--text-secondary);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.7rem;
+      font-weight: 400;
+    }
+
+    .badge-success {
+      background-color: rgba(78, 201, 176, 0.15);
+      color: #4EC9B0;
+    }
+
+    .quick-templates {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem;
+      margin-top: 0.5rem;
+    }
+
+    .quick-template {
+      padding: 0.2rem 0.6rem;
+      background-color: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: 9999px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      color: var(--text-color);
+    }
+
+    .quick-template:hover {
+      background-color: var(--primary-color);
+      color: #1E1E1E;
+      border-color: var(--primary-color);
+    }
+
+    /* 移动端适配 */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+        transform: translateX(-100%);
+        transition: transform 0.2s ease;
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
+
+      .mobile-menu-btn {
+        display: block;
+      }
+    }
+
+    .mobile-menu-btn {
+      display: none;
+      padding: 0.5rem;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 1.25rem;
+      color: var(--text-color);
+    }
+
+    @media (max-width: 768px) {
+      .mobile-menu-btn {
+        display: block;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 侧边栏 -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h1>📊 数据记录器</h1>
+    </div>
+    <div class="sidebar-content">
+      <div class="data-type-list" id="dataTypeList"></div>
+      <button class="add-data-type-btn" onclick="openAddDataTypeModal()">
+        <span>+</span>
+        <span>添加数据类型</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- 主内容区域 -->
+  <main class="main-content">
+    <header class="header">
+      <div class="header-left">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+        <div>
+          <div class="header-title" id="headerTitle">请选择数据类型</div>
+          <div class="header-subtitle" id="headerSubtitle">在侧边栏选择或添加数据类型</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="container" id="contentContainer">
+      <div class="empty-state">
+        <div class="empty-state-icon">📊</div>
+        <h3>开始你的数据追踪之旅</h3>
+        <p>在侧边栏添加你的第一个数据类型，开始记录吧！</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- 添加数据类型模态框 -->
+  <div class="modal-overlay" id="addDataTypeModal">
+    <div class="modal">
+      <h3 class="modal-title">✨ 添加数据类型</h3>
+      <form id="addDataTypeForm">
+        <div class="form-group">
+          <label for="newDataTypeName">数据名称</label>
+          <input type="text" id="newDataTypeName" required placeholder="例如：体重、身高、血压">
+          <div class="quick-templates">
+            <span class="quick-template" onclick="setQuickTemplate('体重', 'kg', '⚖️')">⚖️ 体重</span>
+            <span class="quick-template" onclick="setQuickTemplate('身高', 'cm', '📏')">📏 身高</span>
+            <span class="quick-template" onclick="setQuickTemplate('血压', 'mmHg', '💉')">💉 血压</span>
+            <span class="quick-template" onclick="setQuickTemplate('血糖', 'mg/dL', '🩸')">🩸 血糖</span>
+            <span class="quick-template" onclick="setQuickTemplate('心率', 'bpm', '❤️')">❤️ 心率</span>
+            <span class="quick-template" onclick="setQuickTemplate('睡眠', '小时', '😴')">😴 睡眠</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="newDataTypeUnit">数据单位</label>
+          <input type="text" id="newDataTypeUnit" required placeholder="例如：kg、cm、mmHg">
+        </div>
+        <div class="form-group">
+          <label for="newDataTypeEmoji">图标 Emoji</label>
+          <input type="text" id="newDataTypeEmoji" placeholder="选择或输入一个表情符号">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-cancel btn-sm" onclick="closeAddDataTypeModal()">取消</button>
+          <button type="submit" class="btn btn-primary btn-sm">添加</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 编辑数据类型模态框 -->
+  <div class="modal-overlay" id="editDataTypeModal">
+    <div class="modal">
+      <h3 class="modal-title">✏️ 编辑数据类型</h3>
+      <form id="editDataTypeForm">
+        <input type="hidden" id="editDataTypeId">
+        <div class="form-group">
+          <label for="editDataTypeName">数据名称</label>
+          <input type="text" id="editDataTypeName" required>
+        </div>
+        <div class="form-group">
+          <label for="editDataTypeUnit">数据单位</label>
+          <input type="text" id="editDataTypeUnit" required>
+        </div>
+        <div class="form-group">
+          <label for="editDataTypeEmoji">图标 Emoji</label>
+          <input type="text" id="editDataTypeEmoji">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-cancel btn-sm" onclick="closeEditDataTypeModal()">取消</button>
+          <button type="submit" class="btn btn-primary btn-sm">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 删除数据类型确认模态框 -->
+  <div class="modal-overlay" id="deleteDataTypeModal">
+    <div class="modal">
+      <h3 class="modal-title">⚠️ 确认删除</h3>
+      <p>确定要删除这个数据类型吗？所有相关的记录数据也会被删除，此操作无法撤销！</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-cancel btn-sm" onclick="closeDeleteDataTypeModal()">取消</button>
+        <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteDataType">删除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 编辑记录模态框 -->
+  <div class="modal-overlay" id="editRecordModal">
+    <div class="modal">
+      <h3 class="modal-title">✏️ 编辑记录</h3>
+      <form id="editRecordForm">
+        <input type="hidden" id="editRecordId">
+        <div class="form-group">
+          <label for="editRecordDate">日期</label>
+          <input type="date" id="editRecordDate" required>
+        </div>
+        <div class="form-group">
+          <label for="editRecordValue"><span id="editRecordLabelName">数值</span> (<span id="editRecordLabelUnit">单位</span>)</label>
+          <input type="number" id="editRecordValue" step="0.1" min="0" required>
+        </div>
+        <div class="form-group">
+          <label for="editRecordNote">备注</label>
+          <textarea id="editRecordNote"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-cancel btn-sm" onclick="closeEditRecordModal()">取消</button>
+          <button type="submit" class="btn btn-primary btn-sm">保存修改</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 删除记录确认模态框 -->
+  <div class="modal-overlay" id="deleteRecordModal">
+    <div class="modal">
+      <h3 class="modal-title">⚠️ 确认删除</h3>
+      <p>确定要删除这条记录吗？此操作无法撤销！</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-cancel btn-sm" onclick="closeDeleteRecordModal()">取消</button>
+        <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteRecord">删除</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY_DATA_TYPES = 'data_tracker_data_types';
+    const STORAGE_KEY_RECORDS = 'data_tracker_records';
+    const STORAGE_KEY_ACTIVE_TYPE = 'data_tracker_active_type';
+
+    let dataTypes = [];
+    let records = {};
+    let activeDataTypeId = null;
+    let chartInstance = null;
+    let deleteDataTypeId = null;
+    let deleteRecordId = null;
+
+    const defaultDataTypes = [
+      { id: '1', name: '体重', unit: 'kg', emoji: '⚖️' },
+      { id: '2', name: '身高', unit: 'cm', emoji: '📏' }
+    ];
+
+    const defaultEmojis = ['📊', '📈', '📉', '🔢', '💯', '✅', '⭐', '🎯'];
+
+    function getDataTypes() {
+      const data = localStorage.getItem(STORAGE_KEY_DATA_TYPES);
+      return data ? JSON.parse(data) : defaultDataTypes;
+    }
+
+    function saveDataTypes(types) {
+      localStorage.setItem(STORAGE_KEY_DATA_TYPES, JSON.stringify(types));
+      dataTypes = types;
+    }
+
+    function getRecords() {
+      const data = localStorage.getItem(STORAGE_KEY_RECORDS);
+      return data ? JSON.parse(data) : {};
+    }
+
+    function saveRecords(recs) {
+      localStorage.setItem(STORAGE_KEY_RECORDS, JSON.stringify(recs));
+      records = recs;
+    }
+
+    function getActiveDataTypeId() {
+      return localStorage.getItem(STORAGE_KEY_ACTIVE_TYPE) || null;
+    }
+
+    function saveActiveDataTypeId(id) {
+      localStorage.setItem(STORAGE_KEY_ACTIVE_TYPE, id);
+      activeDataTypeId = id;
+    }
+
+    function generateId() {
+      return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    function getStats(typeRecords) {
+      if (!typeRecords || typeRecords.length === 0) {
+        return { avg: '-', max: '-', min: '-', trend: '--', trendClass: 'trend-neutral' };
+      }
+      
+      const values = typeRecords.map(r => r.value);
+      const avg = (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1);
+      const max = Math.max(...values).toFixed(1);
+      const min = Math.min(...values).toFixed(1);
+      
+      if (typeRecords.length >= 2) {
+        const sorted = [...typeRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
+        const first = sorted[0].value;
+        const last = sorted[sorted.length - 1].value;
+        const diff = (last - first).toFixed(1);
+        const trend = diff >= 0 ? `+${diff}` : `${diff}`;
+        const trendClass = diff > 0 ? 'trend-up' : diff < 0 ? 'trend-down' : 'trend-neutral';
+        return { avg, max, min, trend, trendClass };
+      }
+      
+      return { avg, max, min, trend: '--', trendClass: 'trend-neutral' };
+    }
+
+    function renderDataTypeList() {
+      const listContainer = document.getElementById('dataTypeList');
+      
+      if (dataTypes.length === 0) {
+        listContainer.innerHTML = `
+          <div class="empty-state" style="padding: 2rem;">
+            <p style="font-size: 0.9rem;">暂无数据类型</p>
+          </div>
+        `;
+        return;
+      }
+
+      listContainer.innerHTML = dataTypes.map(type => `
+        <div class="data-type-item ${type.id === activeDataTypeId ? 'active' : ''}" 
+             onclick="selectDataType('${type.id}')"
+             data-type-id="${type.id}">
+          <div class="data-type-info">
+            <span class="data-type-emoji">${type.emoji}</span>
+            <div>
+              <div class="data-type-name">${type.name}</div>
+              <div class="data-type-unit">单位: ${type.unit}</div>
+            </div>
+          </div>
+          <div class="data-type-actions">
+            <button class="btn btn-icon btn-sm" onclick="event.stopPropagation(); openEditDataTypeModal('${type.id}')" title="编辑">✏️</button>
+            <button class="btn btn-icon btn-icon-danger btn-sm" onclick="event.stopPropagation(); openDeleteDataTypeModal('${type.id}')" title="删除">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function selectDataType(typeId) {
+      saveActiveDataTypeId(typeId);
+      renderDataTypeList();
+      renderContent();
+      closeSidebar();
+    }
+
+    function renderContent() {
+      const container = document.getElementById('contentContainer');
+      const headerTitle = document.getElementById('headerTitle');
+      const headerSubtitle = document.getElementById('headerSubtitle');
+
+      if (!activeDataTypeId) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📊</div>
+            <h3>开始你的数据追踪之旅</h3>
+            <p>在侧边栏选择或添加数据类型，开始记录吧！</p>
+          </div>
+        `;
+        headerTitle.textContent = '请选择数据类型';
+        headerSubtitle.textContent = '在侧边栏选择或添加数据类型';
+        if (chartInstance) {
+          chartInstance.destroy();
+          chartInstance = null;
+        }
+        return;
+      }
+
+      const dataType = dataTypes.find(t => t.id === activeDataTypeId);
+      if (!dataType) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">❓</div>
+            <h3>数据类型不存在</h3>
+            <p>请在侧边栏选择一个有效的数据类型</p>
+          </div>
+        `;
+        headerTitle.textContent = '数据类型不存在';
+        headerSubtitle.textContent = '请在侧边栏选择一个有效的数据类型';
+        if (chartInstance) {
+          chartInstance.destroy();
+          chartInstance = null;
+        }
+        return;
+      }
+
+      headerTitle.textContent = `${dataType.emoji} ${dataType.name}记录器`;
+      headerSubtitle.textContent = `记录每日${dataType.name}变化，追踪健康生活`;
+
+      const typeRecords = records[activeDataTypeId] || [];
+
+      container.innerHTML = `
+        <div class="grid">
+          <div class="card">
+            <h2 class="card-title">
+              <span>+</span> 添加记录
+            </h2>
+            <form id="recordForm">
+              <div class="form-group">
+                <label for="recordDate">日期</label>
+                <input type="date" id="recordDate" required>
+              </div>
+              <div class="form-group">
+                <label for="recordValue">${dataType.name} (${dataType.unit})</label>
+                <input type="number" id="recordValue" step="0.1" min="0" required placeholder="请输入${dataType.name}">
+              </div>
+              <div class="form-group">
+                <label for="recordNote">备注（可选）</label>
+                <textarea id="recordNote" placeholder="添加备注信息..."></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <span>保存记录</span>
+              </button>
+            </form>
+          </div>
+
+          <div class="card">
+            <h2 class="card-title">
+              <span>📈</span> 统计概览
+            </h2>
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-value" id="avgValue">-</div>
+                <div class="stat-label">平均值</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="maxValue">-</div>
+                <div class="stat-label">最大值</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="minValue">-</div>
+                <div class="stat-label">最小值</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="trend">--</div>
+                <div class="stat-label">整体趋势</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="grid-column: 1 / -1;">
+            <h2 class="card-title">
+              <span>📊</span> 数据图表
+            </h2>
+            <div class="chart-tabs">
+              <button class="chart-tab active" data-chart="line">折线图</button>
+              <button class="chart-tab" data-chart="bar">柱状图</button>
+            </div>
+            <div class="chart-container">
+              <canvas id="dataChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card" style="grid-column: 1 / -1;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <h2 class="card-title">
+                <span>📝</span> 记录列表
+              </h2>
+              <span class="badge badge-success" id="recordCount">0 条记录</span>
+            </div>
+            <div class="record-list" id="recordList"></div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('recordDate').value = new Date().toISOString().split('T')[0];
+
+      document.getElementById('recordForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        addRecord();
+      });
+
+      document.querySelectorAll('.chart-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+          document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          const currentDataType = dataTypes.find(t => t.id === activeDataTypeId);
+          const currentRecords = records[activeDataTypeId] || [];
+          
+          if (chartInstance) {
+            chartInstance.destroy();
+            chartInstance = null;
+          }
+          
+          setTimeout(() => {
+            renderChart(this.dataset.chart, currentRecords, currentDataType);
+          }, 50);
+        });
+      });
+
+      renderStats(typeRecords, dataType);
+      renderChart('line', typeRecords, dataType);
+      renderRecordList(typeRecords, dataType);
+    }
+
+    function renderStats(typeRecords, dataType) {
+      const stats = getStats(typeRecords);
+      
+      document.getElementById('avgValue').textContent = stats.avg !== '-' ? `${stats.avg} ${dataType.unit}` : '-';
+      document.getElementById('maxValue').textContent = stats.max !== '-' ? `${stats.max} ${dataType.unit}` : '-';
+      document.getElementById('minValue').textContent = stats.min !== '-' ? `${stats.min} ${dataType.unit}` : '-';
+      document.getElementById('trend').textContent = stats.trend;
+      document.getElementById('trend').className = `stat-value ${stats.trendClass}`;
+      document.getElementById('recordCount').textContent = `${typeRecords.length} 条记录`;
+    }
+
+    function renderChart(type = 'line', typeRecords, dataType) {
+      const ctx = document.getElementById('dataChart');
+      if (!ctx) return;
+
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      if (!typeRecords || typeRecords.length === 0) {
+        chartInstance = null;
+        return;
+      }
+
+      const sortedRecords = [...typeRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
+      const labels = sortedRecords.map(r => formatDate(r.date));
+      const data = sortedRecords.map(r => r.value);
+
+      const chartConfig = {
+        type: type,
+        data: {
+          labels,
+          datasets: [{
+            label: `${dataType.name} (${dataType.unit})`,
+            data,
+            borderColor: '#4EC9B0',
+            backgroundColor: 'rgba(78, 201, 176, 0.2)',
+            tension: 0.4,
+            pointBackgroundColor: '#4EC9B0',
+            pointBorderColor: '#1E1E1E',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top'
+            },
+            tooltip: {
+              backgroundColor: 'rgba(37, 37, 38, 0.95)',
+              padding: 12,
+              titleFont: { size: 14, color: '#D4D4D4' },
+              bodyFont: { size: 13, color: '#D4D4D4' },
+              borderColor: '#3C3C3C',
+              borderWidth: 1,
+              cornerRadius: 4,
+              callbacks: {
+                label: function(context) {
+                  return `${dataType.name}: ${context.raw} ${dataType.unit}`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: false,
+              grid: { color: 'rgba(60, 60, 60, 0.5)', drawBorder: false },
+              ticks: {
+                color: '#808080',
+                callback: function(value) {
+                  return value + ' ' + dataType.unit;
+                }
+              }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { color: '#808080', maxRotation: 45, minRotation: 0 }
+            }
+          }
+        }
+      };
+
+      chartInstance = new Chart(ctx.getContext('2d'), chartConfig);
+    }
+
+    function renderRecordList(typeRecords, dataType) {
+      const listContainer = document.getElementById('recordList');
+      if (!listContainer) return;
+
+      if (!typeRecords || typeRecords.length === 0) {
+        listContainer.innerHTML = `
+          <div class="empty-state" style="padding: 2rem;">
+            <span style="font-size: 3rem;">📭</span>
+            <p style="margin-top: 0.5rem;">暂无记录</p>
+            <p style="font-size: 0.875rem; margin-top: 0.5rem;">添加第一条${dataType.name}记录开始追踪吧！</p>
+          </div>
+        `;
+        return;
+      }
+
+      const sortedRecords = [...typeRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      listContainer.innerHTML = sortedRecords.map(record => `
+        <div class="record-item" data-record-id="${record.id}">
+          <div class="record-info">
+            <div class="record-date">${formatDate(record.date)}</div>
+            <div class="record-value">${record.value} ${dataType.unit}</div>
+            ${record.note ? `<div class="record-note" title="${record.note}">${record.note}</div>` : ''}
+          </div>
+          <div class="record-actions">
+            <button class="btn btn-sm btn-primary" onclick="openEditRecordModal('${record.id}')">编辑</button>
+            <button class="btn btn-sm btn-danger" onclick="openDeleteRecordModal('${record.id}')">删除</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function addRecord() {
+      const date = document.getElementById('recordDate').value;
+      const value = parseFloat(document.getElementById('recordValue').value);
+      const note = document.getElementById('recordNote').value;
+
+      const newRecord = {
+        id: generateId(),
+        date,
+        value,
+        note,
+        createdAt: Date.now()
+      };
+
+      if (!records[activeDataTypeId]) {
+        records[activeDataTypeId] = [];
+      }
+      records[activeDataTypeId].push(newRecord);
+      saveRecords(records);
+
+      const form = document.getElementById('recordForm');
+      form.reset();
+      document.getElementById('recordDate').value = new Date().toISOString().split('T')[0];
+
+      const dataType = dataTypes.find(t => t.id === activeDataTypeId);
+      const typeRecords = records[activeDataTypeId];
+      renderStats(typeRecords, dataType);
+      renderChart('line', typeRecords, dataType);
+      renderRecordList(typeRecords, dataType);
+    }
+
+    function openAddDataTypeModal() {
+      document.getElementById('addDataTypeForm').reset();
+      document.getElementById('addDataTypeModal').classList.add('show');
+    }
+
+    function closeAddDataTypeModal() {
+      document.getElementById('addDataTypeModal').classList.remove('show');
+    }
+
+    function openEditDataTypeModal(typeId) {
+      const dataType = dataTypes.find(t => t.id === typeId);
+      if (dataType) {
+        document.getElementById('editDataTypeId').value = typeId;
+        document.getElementById('editDataTypeName').value = dataType.name;
+        document.getElementById('editDataTypeUnit').value = dataType.unit;
+        document.getElementById('editDataTypeEmoji').value = dataType.emoji;
+        document.getElementById('editDataTypeModal').classList.add('show');
+      }
+    }
+
+    function closeEditDataTypeModal() {
+      document.getElementById('editDataTypeModal').classList.remove('show');
+    }
+
+    function openDeleteDataTypeModal(typeId) {
+      deleteDataTypeId = typeId;
+      document.getElementById('deleteDataTypeModal').classList.add('show');
+    }
+
+    function closeDeleteDataTypeModal() {
+      document.getElementById('deleteDataTypeModal').classList.remove('show');
+      deleteDataTypeId = null;
+    }
+
+    function openEditRecordModal(recordId) {
+      const typeRecords = records[activeDataTypeId] || [];
+      const record = typeRecords.find(r => r.id === recordId);
+      const dataType = dataTypes.find(t => t.id === activeDataTypeId);
+      
+      if (record && dataType) {
+        document.getElementById('editRecordId').value = recordId;
+        document.getElementById('editRecordDate').value = record.date;
+        document.getElementById('editRecordValue').value = record.value;
+        document.getElementById('editRecordNote').value = record.note || '';
+        document.getElementById('editRecordLabelName').textContent = dataType.name;
+        document.getElementById('editRecordLabelUnit').textContent = dataType.unit;
+        document.getElementById('editRecordModal').classList.add('show');
+      }
+    }
+
+    function closeEditRecordModal() {
+      document.getElementById('editRecordModal').classList.remove('show');
+    }
+
+    function openDeleteRecordModal(recordId) {
+      deleteRecordId = recordId;
+      document.getElementById('deleteRecordModal').classList.add('show');
+    }
+
+    function closeDeleteRecordModal() {
+      document.getElementById('deleteRecordModal').classList.remove('show');
+      deleteRecordId = null;
+    }
+
+    function setQuickTemplate(name, unit, emoji) {
+      document.getElementById('newDataTypeName').value = name;
+      document.getElementById('newDataTypeUnit').value = unit;
+      document.getElementById('newDataTypeEmoji').value = emoji;
+    }
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('open');
+    }
+
+    document.getElementById('addDataTypeForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const name = document.getElementById('newDataTypeName').value.trim();
+      const unit = document.getElementById('newDataTypeUnit').value.trim();
+      let emoji = document.getElementById('newDataTypeEmoji').value.trim() || defaultEmojis[Math.floor(Math.random() * defaultEmojis.length)];
+
+      const newType = {
+        id: generateId(),
+        name,
+        unit,
+        emoji
+      };
+
+      dataTypes.push(newType);
+      saveDataTypes(dataTypes);
+      
+      closeAddDataTypeModal();
+      renderDataTypeList();
+      selectDataType(newType.id);
+    });
+
+    document.getElementById('editDataTypeForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const typeId = document.getElementById('editDataTypeId').value;
+      const name = document.getElementById('editDataTypeName').value.trim();
+      const unit = document.getElementById('editDataTypeUnit').value.trim();
+      let emoji = document.getElementById('editDataTypeEmoji').value.trim() || '📊';
+
+      const updatedTypes = dataTypes.map(t => 
+        t.id === typeId ? { ...t, name, unit, emoji } : t
+      );
+      saveDataTypes(updatedTypes);
+      
+      closeEditDataTypeModal();
+      renderDataTypeList();
+      renderContent();
+    });
+
+    document.getElementById('confirmDeleteDataType').addEventListener('click', function() {
+      if (deleteDataTypeId) {
+        const updatedTypes = dataTypes.filter(t => t.id !== deleteDataTypeId);
+        const updatedRecords = { ...records };
+        delete updatedRecords[deleteDataTypeId];
+        
+        saveDataTypes(updatedTypes);
+        saveRecords(updatedRecords);
+        
+        if (activeDataTypeId === deleteDataTypeId) {
+          saveActiveDataTypeId(updatedTypes.length > 0 ? updatedTypes[0].id : null);
+        }
+        
+        closeDeleteDataTypeModal();
+        renderDataTypeList();
+        renderContent();
+      }
+    });
+
+    document.getElementById('editRecordForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const recordId = document.getElementById('editRecordId').value;
+      const date = document.getElementById('editRecordDate').value;
+      const value = parseFloat(document.getElementById('editRecordValue').value);
+      const note = document.getElementById('editRecordNote').value;
+
+      const typeRecords = records[activeDataTypeId] || [];
+      const updatedRecords = typeRecords.map(r => 
+        r.id === recordId ? { ...r, date, value, note } : r
+      );
+      records[activeDataTypeId] = updatedRecords;
+      saveRecords(records);
+
+      closeEditRecordModal();
+      const dataType = dataTypes.find(t => t.id === activeDataTypeId);
+      renderStats(updatedRecords, dataType);
+      renderChart('line', updatedRecords, dataType);
+      renderRecordList(updatedRecords, dataType);
+    });
+
+    document.getElementById('confirmDeleteRecord').addEventListener('click', function() {
+      if (deleteRecordId) {
+        const typeRecords = records[activeDataTypeId] || [];
+        const filteredRecords = typeRecords.filter(r => r.id !== deleteRecordId);
+        records[activeDataTypeId] = filteredRecords;
+        saveRecords(records);
+        
+        closeDeleteRecordModal();
+        const dataType = dataTypes.find(t => t.id === activeDataTypeId);
+        renderStats(filteredRecords, dataType);
+        renderChart('line', filteredRecords, dataType);
+        renderRecordList(filteredRecords, dataType);
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+      dataTypes = getDataTypes();
+      records = getRecords();
+      activeDataTypeId = getActiveDataTypeId();
+      
+      if (!activeDataTypeId && dataTypes.length > 0) {
+        activeDataTypeId = dataTypes[0].id;
+        saveActiveDataTypeId(activeDataTypeId);
+      }
+      
+      renderDataTypeList();
+      renderContent();
+    });
+  </script>
+</body>
+</html>
