@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>多功能数据记录器</title>
+  <title>体重追踪与减重计划</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     * {
@@ -28,6 +28,9 @@
       --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.4);
       --hover-bg: #2A2D2E;
       --selection-bg: #264F78;
+      --success-color: #4EC9B0;
+      --warning-color: #FFA500;
+      --danger-color: #F14C4C;
     }
 
     body {
@@ -35,159 +38,71 @@
       background-color: var(--bg-color);
       color: var(--text-color);
       min-height: 100vh;
-      display: flex;
       font-size: 14px;
       line-height: 1.5;
     }
 
-    /* 侧边栏样式 */
-    .sidebar {
-      width: 280px;
-      background: var(--bg-secondary);
-      border-right: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      position: fixed;
-      left: 0;
-      top: 0;
-      z-index: 100;
-    }
-
-    .sidebar-header {
+    .app-container {
+      max-width: 1200px;
+      margin: 0 auto;
       padding: 1.5rem;
-      background: var(--bg-tertiary);
-      color: var(--text-bright);
-      border-bottom: 1px solid var(--border-color);
     }
 
-    .sidebar-header h1 {
-      font-size: 1.3rem;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-    }
-
-    .sidebar-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1rem;
-    }
-
-    .data-type-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .data-type-item {
+    .header {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      padding: 1.5rem 2rem;
+      margin-bottom: 1.5rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.6rem 0.75rem;
-      border-radius: 0.375rem;
-      cursor: pointer;
-      transition: background-color 0.15s ease;
-      background: transparent;
-      color: var(--text-color);
+      flex-wrap: wrap;
+      gap: 1rem;
     }
 
-    .data-type-item:hover {
-      background: var(--hover-bg);
-    }
-
-    .data-type-item.active {
-      background: var(--selection-bg);
+    .header-title {
+      font-size: 1.5rem;
+      font-weight: 600;
       color: var(--text-bright);
-    }
-
-    .data-type-info {
       display: flex;
       align-items: center;
       gap: 0.75rem;
     }
 
-    .data-type-emoji {
-      font-size: 1.25rem;
-    }
-
-    .data-type-name {
-      font-weight: 400;
-      color: inherit;
-    }
-
-    .data-type-unit {
-      font-size: 0.75rem;
+    .header-subtitle {
       color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-top: 0.25rem;
     }
 
-    .data-type-actions {
+    .header-actions {
       display: flex;
-      gap: 0.125rem;
+      gap: 0.75rem;
+      align-items: center;
     }
 
-    .add-data-type-btn {
-      width: 100%;
-      padding: 0.6rem;
-      border: 1px dashed var(--border-color);
+    .unit-toggle {
+      display: flex;
+      background: var(--bg-color);
+      border: 1px solid var(--border-color);
       border-radius: 0.375rem;
+      overflow: hidden;
+    }
+
+    .unit-toggle button {
+      padding: 0.4rem 0.8rem;
+      border: none;
       background: transparent;
       color: var(--text-secondary);
       cursor: pointer;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       transition: all 0.15s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
     }
 
-    .add-data-type-btn:hover {
-      border-color: var(--primary-color);
-      color: var(--primary-color);
-      background: rgba(78, 201, 176, 0.1);
-    }
-
-    /* 主内容区域 */
-    .main-content {
-      flex: 1;
-      margin-left: 280px;
-      min-height: 100vh;
-    }
-
-    .header {
-      background: var(--bg-secondary);
-      border-bottom: 1px solid var(--border-color);
-      padding: 1.25rem 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 50;
-    }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .header-title {
-      font-size: 1.3rem;
-      font-weight: 500;
-      color: var(--text-bright);
-    }
-
-    .header-subtitle {
-      color: var(--text-secondary);
-      font-size: 0.85rem;
-    }
-
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 1.5rem 2rem;
+    .unit-toggle button.active {
+      background: var(--primary-color);
+      color: #1E1E1E;
     }
 
     .grid {
@@ -243,7 +158,8 @@
     }
 
     .form-group input,
-    .form-group textarea {
+    .form-group textarea,
+    .form-group select {
       width: 100%;
       padding: 0.625rem 0.75rem;
       border: 1px solid var(--border-color);
@@ -256,15 +172,174 @@
     }
 
     .form-group input:focus,
-    .form-group textarea:focus {
+    .form-group textarea:focus,
+    .form-group select:focus {
       outline: none;
       border-color: var(--primary-color);
       box-shadow: 0 0 0 2px rgba(78, 201, 176, 0.2);
     }
 
+    /* 自定义日期选择器样式 */
+    .date-picker-wrapper {
+      position: relative;
+    }
+
+    .date-picker-input {
+      cursor: pointer;
+      padding-right: 2.5rem;
+    }
+
+    .date-picker-icon {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+      pointer-events: none;
+      font-size: 1rem;
+    }
+
+    /* 自定义日期面板 */
+    .date-panel {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      z-index: 100;
+      box-shadow: var(--shadow-lg);
+      min-width: 280px;
+      display: none;
+    }
+
+    .date-panel.show {
+      display: block;
+    }
+
+    .date-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .date-panel-nav {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .date-panel-nav button {
+      background: transparent;
+      border: none;
+      color: var(--text-color);
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.9rem;
+      transition: all 0.15s ease;
+    }
+
+    .date-panel-nav button:hover {
+      background: var(--hover-bg);
+      color: var(--text-bright);
+    }
+
+    .date-panel-title {
+      font-weight: 500;
+      color: var(--text-bright);
+      font-size: 0.95rem;
+    }
+
+    .date-panel-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .date-panel-weekday {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      padding: 0.375rem;
+    }
+
+    .date-panel-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.25rem;
+    }
+
+    .date-panel-day {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--text-color);
+      background: transparent;
+      border: none;
+      transition: all 0.15s ease;
+    }
+
+    .date-panel-day:hover {
+      background: var(--hover-bg);
+      color: var(--text-bright);
+    }
+
+    .date-panel-day.today {
+      color: var(--primary-color);
+      font-weight: 600;
+    }
+
+    .date-panel-day.selected {
+      background: var(--primary-color);
+      color: #1E1E1E;
+      font-weight: 500;
+    }
+
+    .date-panel-day.other-month {
+      color: var(--text-secondary);
+      opacity: 0.5;
+    }
+
+    .date-panel-footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .date-panel-footer button {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      transition: all 0.15s ease;
+    }
+
+    .date-panel-footer button:hover {
+      color: var(--primary-color);
+      background: rgba(78, 201, 176, 0.1);
+    }
+
     .form-group textarea {
       resize: vertical;
       min-height: 60px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
     }
 
     .btn {
@@ -287,6 +362,15 @@
     }
 
     .btn-primary:hover {
+      filter: brightness(1.1);
+    }
+
+    .btn-secondary {
+      background: var(--secondary-color);
+      color: white;
+    }
+
+    .btn-secondary:hover {
       filter: brightness(1.1);
     }
 
@@ -314,10 +398,6 @@
     .btn-icon:hover {
       background: var(--hover-bg);
       color: var(--text-bright);
-    }
-
-    .btn-icon-danger:hover {
-      color: #F14C4C;
     }
 
     .stats-grid {
@@ -349,37 +429,8 @@
 
     .chart-container {
       position: relative;
-      height: 280px;
+      height: 300px;
       width: 100%;
-    }
-
-    .chart-tabs {
-      display: flex;
-      gap: 0.375rem;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-    }
-
-    .chart-tab {
-      padding: 0.4rem 0.75rem;
-      border: 1px solid var(--border-color);
-      background: transparent;
-      border-radius: 0.25rem;
-      cursor: pointer;
-      font-size: 0.8rem;
-      transition: all 0.15s ease;
-      color: var(--text-color);
-    }
-
-    .chart-tab.active {
-      background: var(--primary-color);
-      color: #1E1E1E;
-      border-color: var(--primary-color);
-    }
-
-    .chart-tab:hover:not(.active) {
-      border-color: var(--primary-color);
-      color: var(--primary-color);
     }
 
     .record-list {
@@ -494,7 +545,9 @@
       border-radius: 0.5rem;
       padding: 1.25rem;
       width: 90%;
-      max-width: 450px;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
       transform: scale(0.95);
       transition: transform 0.15s ease;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -530,11 +583,11 @@
     }
 
     .trend-up {
-      color: #4EC9B0;
+      color: #F14C4C;
     }
 
     .trend-down {
-      color: #F14C4C;
+      color: #4EC9B0;
     }
 
     .trend-neutral {
@@ -555,172 +608,435 @@
       color: #4EC9B0;
     }
 
-    .quick-templates {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.375rem;
-      margin-top: 0.5rem;
+    .badge-warning {
+      background-color: rgba(255, 165, 0, 0.15);
+      color: #FFA500;
     }
 
-    .quick-template {
-      padding: 0.2rem 0.6rem;
-      background-color: var(--bg-color);
+    .badge-danger {
+      background-color: rgba(241, 76, 76, 0.15);
+      color: #F14C4C;
+    }
+
+    /* 减重计划样式 */
+    .plan-card {
+      background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
       border: 1px solid var(--border-color);
-      border-radius: 9999px;
-      font-size: 0.7rem;
-      cursor: pointer;
-      transition: all 0.15s ease;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .plan-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .plan-title {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--text-bright);
+    }
+
+    .plan-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--bg-color);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 0.75rem 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .plan-details {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .plan-detail {
+      text-align: center;
+    }
+
+    .plan-detail-value {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-bright);
+    }
+
+    .plan-detail-label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    .plan-schedule {
+      margin-top: 1rem;
+    }
+
+    .schedule-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .schedule-item:last-child {
+      border-bottom: none;
+    }
+
+    .schedule-date {
+      font-size: 0.85rem;
       color: var(--text-color);
     }
 
-    .quick-template:hover {
-      background-color: var(--primary-color);
-      color: #1E1E1E;
+    .schedule-target {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--primary-color);
+    }
+
+    .schedule-actual {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .schedule-status {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.25rem;
+    }
+
+    .status-achieved {
+      background: rgba(78, 201, 176, 0.15);
+      color: var(--success-color);
+    }
+
+    .status-missed {
+      background: rgba(241, 76, 76, 0.15);
+      color: var(--danger-color);
+    }
+
+    .status-pending {
+      background: rgba(128, 128, 128, 0.15);
+      color: var(--text-secondary);
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.5rem 0.75rem;
+      background: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-size: 0.85rem;
+    }
+
+    .radio-option:hover {
       border-color: var(--primary-color);
     }
 
-    /* 移动端适配 */
-    @media (max-width: 768px) {
-      .sidebar {
-        width: 100%;
-        transform: translateX(-100%);
-        transition: transform 0.2s ease;
-      }
-
-      .sidebar.open {
-        transform: translateX(0);
-      }
-
-      .main-content {
-        margin-left: 0;
-      }
-
-      .mobile-menu-btn {
-        display: block;
-      }
+    .radio-option.active {
+      background: rgba(78, 201, 176, 0.1);
+      border-color: var(--primary-color);
+      color: var(--primary-color);
     }
 
-    .mobile-menu-btn {
-      display: none;
-      padding: 0.5rem;
+    .radio-option input {
+      width: auto;
+      margin: 0;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.25rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .tab {
+      padding: 0.625rem 1rem;
       background: transparent;
       border: none;
+      border-bottom: 2px solid transparent;
       cursor: pointer;
-      font-size: 1.25rem;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      transition: all 0.15s ease;
+    }
+
+    .tab.active {
+      color: var(--primary-color);
+      border-bottom-color: var(--primary-color);
+    }
+
+    .tab:hover:not(.active) {
       color: var(--text-color);
     }
 
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
     @media (max-width: 768px) {
-      .mobile-menu-btn {
-        display: block;
+      .app-container {
+        padding: 1rem;
+      }
+
+      .header {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .plan-details {
+        grid-template-columns: 1fr;
       }
     }
   </style>
 </head>
 <body>
-  <!-- 侧边栏 -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <h1>📊 数据记录器</h1>
-    </div>
-    <div class="sidebar-content">
-      <div class="data-type-list" id="dataTypeList"></div>
-      <button class="add-data-type-btn" onclick="openAddDataTypeModal()">
-        <span>+</span>
-        <span>添加数据类型</span>
-      </button>
-    </div>
-  </aside>
-
-  <!-- 主内容区域 -->
-  <main class="main-content">
+  <div class="app-container">
+    <!-- 头部 -->
     <header class="header">
-      <div class="header-left">
-        <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
-        <div>
-          <div class="header-title" id="headerTitle">请选择数据类型</div>
-          <div class="header-subtitle" id="headerSubtitle">在侧边栏选择或添加数据类型</div>
+      <div>
+        <div class="header-title">
+          <span>⚖️</span>
+          <span>体重追踪与减重计划</span>
         </div>
+        <div class="header-subtitle">科学制定减重目标，追踪每日体重变化</div>
+      </div>
+      <div class="header-actions">
+        <div class="unit-toggle">
+          <button class="active" onclick="switchUnit('jin')" id="btnJin">斤</button>
+          <button onclick="switchUnit('kg')" id="btnKg">千克</button>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="openPlanModal()">
+          <span>🎯</span>
+          <span>设置计划</span>
+        </button>
       </div>
     </header>
 
-    <div class="container" id="contentContainer">
-      <div class="empty-state">
-        <div class="empty-state-icon">📊</div>
-        <h3>开始你的数据追踪之旅</h3>
-        <p>在侧边栏添加你的第一个数据类型，开始记录吧！</p>
-      </div>
-    </div>
-  </main>
+    <!-- 减重计划概览 -->
+    <div id="planContainer"></div>
 
-  <!-- 添加数据类型模态框 -->
-  <div class="modal-overlay" id="addDataTypeModal">
-    <div class="modal">
-      <h3 class="modal-title">✨ 添加数据类型</h3>
-      <form id="addDataTypeForm">
-        <div class="form-group">
-          <label for="newDataTypeName">数据名称</label>
-          <input type="text" id="newDataTypeName" required placeholder="例如：体重、身高、血压">
-          <div class="quick-templates">
-            <span class="quick-template" onclick="setQuickTemplate('体重', 'kg', '⚖️')">⚖️ 体重</span>
-            <span class="quick-template" onclick="setQuickTemplate('身高', 'cm', '📏')">📏 身高</span>
-            <span class="quick-template" onclick="setQuickTemplate('血压', 'mmHg', '💉')">💉 血压</span>
-            <span class="quick-template" onclick="setQuickTemplate('血糖', 'mg/dL', '🩸')">🩸 血糖</span>
-            <span class="quick-template" onclick="setQuickTemplate('心率', 'bpm', '❤️')">❤️ 心率</span>
-            <span class="quick-template" onclick="setQuickTemplate('睡眠', '小时', '😴')">😴 睡眠</span>
+    <!-- 标签页 -->
+    <div class="tabs">
+      <button class="tab active" data-tab="records" onclick="switchTab('records')">📊 体重记录</button>
+      <button class="tab" data-tab="schedule" onclick="switchTab('schedule')">📅 计划进度</button>
+    </div>
+
+    <!-- 体重记录标签页 -->
+    <div class="tab-content active" id="recordsTab">
+      <div class="grid">
+        <!-- 添加记录 -->
+        <div class="card">
+          <h2 class="card-title">
+            <span>+</span> 添加体重记录
+          </h2>
+          <form id="recordForm">
+            <div class="form-group">
+              <label for="recordDate">日期</label>
+              <div class="date-picker-wrapper">
+                <input type="text" id="recordDate" class="date-picker-input" readonly required placeholder="选择日期">
+                <span class="date-picker-icon">📅</span>
+                <div class="date-panel" id="recordDatePanel"></div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="recordValue">体重 (<span class="unit-label">斤</span>)</label>
+              <input type="number" id="recordValue" step="0.1" min="0" required placeholder="请输入体重">
+            </div>
+            <div class="form-group">
+              <label for="recordNote">备注（可选）</label>
+              <textarea id="recordNote" placeholder="例如：早餐后、运动后..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+              <span>保存记录</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- 统计概览 -->
+        <div class="card">
+          <h2 class="card-title">
+            <span>📈</span> 统计概览
+          </h2>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value" id="avgValue">-</div>
+              <div class="stat-label">平均体重</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="maxValue">-</div>
+              <div class="stat-label">最高体重</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="minValue">-</div>
+              <div class="stat-label">最低体重</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="trend">--</div>
+              <div class="stat-label">整体变化</div>
+            </div>
           </div>
         </div>
-        <div class="form-group">
-          <label for="newDataTypeUnit">数据单位</label>
-          <input type="text" id="newDataTypeUnit" required placeholder="例如：kg、cm、mmHg">
-        </div>
-        <div class="form-group">
-          <label for="newDataTypeEmoji">图标 Emoji</label>
-          <input type="text" id="newDataTypeEmoji" placeholder="选择或输入一个表情符号">
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn btn-cancel btn-sm" onclick="closeAddDataTypeModal()">取消</button>
-          <button type="submit" class="btn btn-primary btn-sm">添加</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
-  <!-- 编辑数据类型模态框 -->
-  <div class="modal-overlay" id="editDataTypeModal">
-    <div class="modal">
-      <h3 class="modal-title">✏️ 编辑数据类型</h3>
-      <form id="editDataTypeForm">
-        <input type="hidden" id="editDataTypeId">
-        <div class="form-group">
-          <label for="editDataTypeName">数据名称</label>
-          <input type="text" id="editDataTypeName" required>
+        <!-- 图表 -->
+        <div class="card" style="grid-column: 1 / -1;">
+          <h2 class="card-title">
+            <span>📊</span> 体重变化趋势
+          </h2>
+          <div class="chart-container">
+            <canvas id="weightChart"></canvas>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="editDataTypeUnit">数据单位</label>
-          <input type="text" id="editDataTypeUnit" required>
-        </div>
-        <div class="form-group">
-          <label for="editDataTypeEmoji">图标 Emoji</label>
-          <input type="text" id="editDataTypeEmoji">
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn btn-cancel btn-sm" onclick="closeEditDataTypeModal()">取消</button>
-          <button type="submit" class="btn btn-primary btn-sm">保存</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
-  <!-- 删除数据类型确认模态框 -->
-  <div class="modal-overlay" id="deleteDataTypeModal">
-    <div class="modal">
-      <h3 class="modal-title">⚠️ 确认删除</h3>
-      <p>确定要删除这个数据类型吗？所有相关的记录数据也会被删除，此操作无法撤销！</p>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-cancel btn-sm" onclick="closeDeleteDataTypeModal()">取消</button>
-        <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteDataType">删除</button>
+        <!-- 记录列表 -->
+        <div class="card" style="grid-column: 1 / -1;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 class="card-title" style="margin: 0;">
+              <span>📝</span> 记录列表
+            </h2>
+            <span class="badge badge-success" id="recordCount">0 条记录</span>
+          </div>
+          <div class="record-list" id="recordList"></div>
+        </div>
       </div>
+    </div>
+
+    <!-- 计划进度标签页 -->
+    <div class="tab-content" id="scheduleTab">
+      <div class="card">
+        <h2 class="card-title">
+          <span>📅</span> 减重计划进度
+        </h2>
+        <div id="scheduleContainer">
+          <div class="empty-state">
+            <div class="empty-state-icon">🎯</div>
+            <h3>暂无减重计划</h3>
+            <p>点击上方"设置计划"按钮开始制定你的减重目标</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 设置计划模态框 -->
+  <div class="modal-overlay" id="planModal">
+    <div class="modal">
+      <h3 class="modal-title">🎯 设置计划</h3>
+      <form id="planForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="planStartWeight">起始体重 (<span class="unit-label">斤</span>)</label>
+            <input type="number" id="planStartWeight" step="0.1" min="0" required placeholder="当前体重">
+          </div>
+          <div class="form-group">
+            <label for="planTargetWeight">目标体重 (<span class="unit-label">斤</span>)</label>
+            <input type="number" id="planTargetWeight" step="0.1" min="0" required placeholder="目标体重">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="planStartDate">开始日期</label>
+            <div class="date-picker-wrapper">
+              <input type="text" id="planStartDate" class="date-picker-input" readonly required placeholder="选择开始日期">
+              <span class="date-picker-icon">📅</span>
+              <div class="date-panel" id="planStartDatePanel"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="planEndDate">结束日期</label>
+            <div class="date-picker-wrapper">
+              <input type="text" id="planEndDate" class="date-picker-input" readonly required placeholder="选择结束日期">
+              <span class="date-picker-icon">📅</span>
+              <div class="date-panel" id="planEndDatePanel"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>减重方式</label>
+          <div class="radio-group">
+            <label class="radio-option active" data-type="fixed" onclick="selectPlanType('fixed')">
+              <input type="radio" name="planType" value="fixed" checked>
+              <span>固定减重</span>
+            </label>
+            <label class="radio-option" data-type="percentage" onclick="selectPlanType('percentage')">
+              <input type="radio" name="planType" value="percentage">
+              <span>百分比减重</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group" id="fixedAmountGroup">
+          <label for="planFixedAmount">每周固定减重 (<span class="unit-label">斤</span>)</label>
+          <input type="number" id="planFixedAmount" step="0.1" min="0.1" value="1" placeholder="例如：1">
+        </div>
+
+        <div class="form-group" id="percentageGroup" style="display: none;">
+          <label for="planPercentage">每周减重百分比 (%)</label>
+          <input type="number" id="planPercentage" step="0.1" min="0.1" max="10" value="1" placeholder="例如：1">
+        </div>
+
+        <div class="form-group">
+          <label for="planPeriod">计划周期</label>
+          <select id="planPeriod">
+            <option value="daily">每日</option>
+            <option value="weekly" selected>每周</option>
+            <option value="monthly">每月</option>
+          </select>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-cancel btn-sm" onclick="closePlanModal()">取消</button>
+          <button type="submit" class="btn btn-primary btn-sm">创建计划</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -732,10 +1048,14 @@
         <input type="hidden" id="editRecordId">
         <div class="form-group">
           <label for="editRecordDate">日期</label>
-          <input type="date" id="editRecordDate" required>
+          <div class="date-picker-wrapper">
+            <input type="text" id="editRecordDate" class="date-picker-input" readonly required placeholder="选择日期">
+            <span class="date-picker-icon">📅</span>
+            <div class="date-panel" id="editRecordDatePanel"></div>
+          </div>
         </div>
         <div class="form-group">
-          <label for="editRecordValue"><span id="editRecordLabelName">数值</span> (<span id="editRecordLabelUnit">单位</span>)</label>
+          <label for="editRecordValue">体重 (<span class="unit-label">斤</span>)</label>
           <input type="number" id="editRecordValue" step="0.1" min="0" required>
         </div>
         <div class="form-group">
@@ -763,37 +1083,21 @@
   </div>
 
   <script>
-    const STORAGE_KEY_DATA_TYPES = 'data_tracker_data_types';
-    const STORAGE_KEY_RECORDS = 'data_tracker_records';
-    const STORAGE_KEY_ACTIVE_TYPE = 'data_tracker_active_type';
+    const STORAGE_KEY_RECORDS = 'weight_tracker_records';
+    const STORAGE_KEY_PLAN = 'weight_tracker_plan';
+    const STORAGE_KEY_UNIT = 'weight_tracker_unit';
 
-    let dataTypes = [];
-    let records = {};
-    let activeDataTypeId = null;
+    let records = [];
+    let plan = null;
     let chartInstance = null;
-    let deleteDataTypeId = null;
     let deleteRecordId = null;
+    let currentUnit = 'jin'; // 默认斤
 
-    const defaultDataTypes = [
-      { id: '1', name: '体重', unit: 'kg', emoji: '⚖️' },
-      { id: '2', name: '身高', unit: 'cm', emoji: '📏' }
-    ];
-
-    const defaultEmojis = ['📊', '📈', '📉', '🔢', '💯', '✅', '⭐', '🎯'];
-
-    function getDataTypes() {
-      const data = localStorage.getItem(STORAGE_KEY_DATA_TYPES);
-      return data ? JSON.parse(data) : defaultDataTypes;
-    }
-
-    function saveDataTypes(types) {
-      localStorage.setItem(STORAGE_KEY_DATA_TYPES, JSON.stringify(types));
-      dataTypes = types;
-    }
+    const UNIT_RATE = 2; // 1 kg = 2 斤
 
     function getRecords() {
       const data = localStorage.getItem(STORAGE_KEY_RECORDS);
-      return data ? JSON.parse(data) : {};
+      return data ? JSON.parse(data) : [];
     }
 
     function saveRecords(recs) {
@@ -801,17 +1105,181 @@
       records = recs;
     }
 
-    function getActiveDataTypeId() {
-      return localStorage.getItem(STORAGE_KEY_ACTIVE_TYPE) || null;
+    function getPlan() {
+      const data = localStorage.getItem(STORAGE_KEY_PLAN);
+      return data ? JSON.parse(data) : null;
     }
 
-    function saveActiveDataTypeId(id) {
-      localStorage.setItem(STORAGE_KEY_ACTIVE_TYPE, id);
-      activeDataTypeId = id;
+    function savePlan(p) {
+      localStorage.setItem(STORAGE_KEY_PLAN, JSON.stringify(p));
+      plan = p;
+    }
+
+    function getUnit() {
+      const data = localStorage.getItem(STORAGE_KEY_UNIT);
+      return data || 'jin';
+    }
+
+    function saveUnit(unit) {
+      localStorage.setItem(STORAGE_KEY_UNIT, unit);
+      currentUnit = unit;
+    }
+
+    function toDisplayValue(kgValue) {
+      return currentUnit === 'jin' ? kgValue * UNIT_RATE : kgValue;
+    }
+
+    function toKgValue(displayValue) {
+      return currentUnit === 'jin' ? displayValue / UNIT_RATE : displayValue;
+    }
+
+    function getUnitLabel() {
+      return currentUnit === 'jin' ? '斤' : 'kg';
     }
 
     function generateId() {
       return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
+    // 自定义日期选择器
+    function initDatePicker(inputId, panelId) {
+      const input = document.getElementById(inputId);
+      const panel = document.getElementById(panelId);
+      let currentDate = new Date();
+      let selectedDate = null;
+
+      function renderCalendar() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+        const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+        const weekdayNames = ['日', '一', '二', '三', '四', '五', '六'];
+
+        let html = `
+          <div class="date-panel-header">
+            <div class="date-panel-nav">
+              <button onclick="event.stopPropagation(); changeMonth('${inputId}', '${panelId}', -1)">‹</button>
+            </div>
+            <div class="date-panel-title">${year}年 ${monthNames[month]}</div>
+            <div class="date-panel-nav">
+              <button onclick="event.stopPropagation(); changeMonth('${inputId}', '${panelId}', 1)">›</button>
+            </div>
+          </div>
+          <div class="date-panel-weekdays">
+            ${weekdayNames.map(d => `<div class="date-panel-weekday">${d}</div>`).join('')}
+          </div>
+          <div class="date-panel-days">
+        `;
+
+        // 上月日期
+        for (let i = firstDay - 1; i >= 0; i--) {
+          html += `<button class="date-panel-day other-month" onclick="event.stopPropagation(); selectDate('${inputId}', '${panelId}', ${year}, ${month - 1}, ${daysInPrevMonth - i})">${daysInPrevMonth - i}</button>`;
+        }
+
+        // 当月日期
+        const today = new Date();
+        for (let i = 1; i <= daysInMonth; i++) {
+          const isToday = year === today.getFullYear() && month === today.getMonth() && i === today.getDate();
+          const isSelected = selectedDate && year === selectedDate.getFullYear() && month === selectedDate.getMonth() && i === selectedDate.getDate();
+          const classes = ['date-panel-day'];
+          if (isToday) classes.push('today');
+          if (isSelected) classes.push('selected');
+          html += `<button class="${classes.join(' ')}" onclick="event.stopPropagation(); selectDate('${inputId}', '${panelId}', ${year}, ${month}, ${i})">${i}</button>`;
+        }
+
+        // 下月日期
+        const remainingDays = (7 - ((firstDay + daysInMonth) % 7)) % 7;
+        for (let i = 1; i <= remainingDays; i++) {
+          html += `<button class="date-panel-day other-month" onclick="event.stopPropagation(); selectDate('${inputId}', '${panelId}', ${year}, ${month + 1}, ${i})">${i}</button>`;
+        }
+
+        html += `
+          </div>
+          <div class="date-panel-footer">
+            <button onclick="event.stopPropagation(); selectToday('${inputId}', '${panelId}')">今天</button>
+            <button onclick="event.stopPropagation(); clearDate('${inputId}', '${panelId}')">清除</button>
+          </div>
+        `;
+
+        panel.innerHTML = html;
+      }
+
+      // 存储引用以便外部调用
+      panel._datePicker = {
+        currentDate,
+        selectedDate,
+        renderCalendar
+      };
+
+      input.addEventListener('click', function(e) {
+        e.stopPropagation();
+        // 关闭其他面板
+        document.querySelectorAll('.date-panel').forEach(p => {
+          if (p.id !== panelId) p.classList.remove('show');
+        });
+        panel.classList.toggle('show');
+        if (panel.classList.contains('show')) {
+          renderCalendar();
+        }
+      });
+
+      // 点击外部关闭
+      document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !panel.contains(e.target)) {
+          panel.classList.remove('show');
+        }
+      });
+    }
+
+    function changeMonth(inputId, panelId, delta) {
+      const panel = document.getElementById(panelId);
+      const picker = panel._datePicker;
+      picker.currentDate.setMonth(picker.currentDate.getMonth() + delta);
+      picker.renderCalendar();
+    }
+
+    function selectDate(inputId, panelId, year, month, day) {
+      const input = document.getElementById(inputId);
+      const panel = document.getElementById(panelId);
+      const picker = panel._datePicker;
+      
+      const date = new Date(year, month, day);
+      picker.selectedDate = date;
+      input.value = formatDateForInput(date);
+      panel.classList.remove('show');
+      picker.renderCalendar();
+    }
+
+    function selectToday(inputId, panelId) {
+      const today = new Date();
+      selectDate(inputId, panelId, today.getFullYear(), today.getMonth(), today.getDate());
+    }
+
+    function clearDate(inputId, panelId) {
+      const input = document.getElementById(inputId);
+      const panel = document.getElementById(panelId);
+      const picker = panel._datePicker;
+      
+      input.value = '';
+      picker.selectedDate = null;
+      panel.classList.remove('show');
+      picker.renderCalendar();
+    }
+
+    function formatDateForInput(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function parseDateInput(dateStr) {
+      if (!dateStr) return null;
+      const [year, month, day] = dateStr.split('-').map(Number);
+      return new Date(year, month - 1, day);
     }
 
     function formatDate(dateStr) {
@@ -819,18 +1287,23 @@
       return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
     }
 
-    function getStats(typeRecords) {
-      if (!typeRecords || typeRecords.length === 0) {
+    function formatDateShort(dateStr) {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+    }
+
+    function getStats() {
+      if (!records || records.length === 0) {
         return { avg: '-', max: '-', min: '-', trend: '--', trendClass: 'trend-neutral' };
       }
-      
-      const values = typeRecords.map(r => r.value);
+
+      const values = records.map(r => r.value);
       const avg = (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1);
       const max = Math.max(...values).toFixed(1);
       const min = Math.min(...values).toFixed(1);
-      
-      if (typeRecords.length >= 2) {
-        const sorted = [...typeRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      if (records.length >= 2) {
+        const sorted = [...records].sort((a, b) => new Date(a.date) - new Date(b.date));
         const first = sorted[0].value;
         const last = sorted[sorted.length - 1].value;
         const diff = (last - first).toFixed(1);
@@ -838,242 +1311,177 @@
         const trendClass = diff > 0 ? 'trend-up' : diff < 0 ? 'trend-down' : 'trend-neutral';
         return { avg, max, min, trend, trendClass };
       }
-      
+
       return { avg, max, min, trend: '--', trendClass: 'trend-neutral' };
     }
 
-    function renderDataTypeList() {
-      const listContainer = document.getElementById('dataTypeList');
+    function updateUnitLabels() {
+      document.querySelectorAll('.unit-label').forEach(label => {
+        label.textContent = getUnitLabel();
+      });
+    }
+
+    function switchUnit(unit) {
+      currentUnit = unit;
+      saveUnit(unit);
+
+      document.getElementById('btnJin').classList.toggle('active', unit === 'jin');
+      document.getElementById('btnKg').classList.toggle('active', unit === 'kg');
+
+      updateUnitLabels();
+      renderStats();
+      renderChart();
+      renderRecordList();
+      renderPlan();
+      renderSchedule();
+    }
+
+    function renderPlan() {
+      const container = document.getElementById('planContainer');
+
+      if (!plan) {
+        container.innerHTML = '';
+        return;
+      }
+
+      const currentWeight = records.length > 0 
+        ? [...records].sort((a, b) => new Date(b.date) - new Date(a.date))[0].value 
+        : plan.startWeight;
       
-      if (dataTypes.length === 0) {
-        listContainer.innerHTML = `
-          <div class="empty-state" style="padding: 2rem;">
-            <p style="font-size: 0.9rem;">暂无数据类型</p>
-          </div>
-        `;
-        return;
-      }
+      const totalLoss = plan.startWeight - plan.targetWeight;
+      const currentLoss = plan.startWeight - currentWeight;
+      const progress = Math.max(0, Math.min(100, (currentLoss / totalLoss) * 100));
+      
+      const daysTotal = Math.ceil((new Date(plan.endDate) - new Date(plan.startDate)) / (1000 * 60 * 60 * 24));
+      const daysPassed = Math.ceil((new Date() - new Date(plan.startDate)) / (1000 * 60 * 60 * 24));
+      const timeProgress = Math.max(0, Math.min(100, (daysPassed / daysTotal) * 100));
 
-      listContainer.innerHTML = dataTypes.map(type => `
-        <div class="data-type-item ${type.id === activeDataTypeId ? 'active' : ''}" 
-             onclick="selectDataType('${type.id}')"
-             data-type-id="${type.id}">
-          <div class="data-type-info">
-            <span class="data-type-emoji">${type.emoji}</span>
-            <div>
-              <div class="data-type-name">${type.name}</div>
-              <div class="data-type-unit">单位: ${type.unit}</div>
-            </div>
-          </div>
-          <div class="data-type-actions">
-            <button class="btn btn-icon btn-sm" onclick="event.stopPropagation(); openEditDataTypeModal('${type.id}')" title="编辑">✏️</button>
-            <button class="btn btn-icon btn-icon-danger btn-sm" onclick="event.stopPropagation(); openDeleteDataTypeModal('${type.id}')" title="删除">🗑️</button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function selectDataType(typeId) {
-      saveActiveDataTypeId(typeId);
-      renderDataTypeList();
-      renderContent();
-      closeSidebar();
-    }
-
-    function renderContent() {
-      const container = document.getElementById('contentContainer');
-      const headerTitle = document.getElementById('headerTitle');
-      const headerSubtitle = document.getElementById('headerSubtitle');
-
-      if (!activeDataTypeId) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">📊</div>
-            <h3>开始你的数据追踪之旅</h3>
-            <p>在侧边栏选择或添加数据类型，开始记录吧！</p>
-          </div>
-        `;
-        headerTitle.textContent = '请选择数据类型';
-        headerSubtitle.textContent = '在侧边栏选择或添加数据类型';
-        if (chartInstance) {
-          chartInstance.destroy();
-          chartInstance = null;
-        }
-        return;
-      }
-
-      const dataType = dataTypes.find(t => t.id === activeDataTypeId);
-      if (!dataType) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">❓</div>
-            <h3>数据类型不存在</h3>
-            <p>请在侧边栏选择一个有效的数据类型</p>
-          </div>
-        `;
-        headerTitle.textContent = '数据类型不存在';
-        headerSubtitle.textContent = '请在侧边栏选择一个有效的数据类型';
-        if (chartInstance) {
-          chartInstance.destroy();
-          chartInstance = null;
-        }
-        return;
-      }
-
-      headerTitle.textContent = `${dataType.emoji} ${dataType.name}记录器`;
-      headerSubtitle.textContent = `记录每日${dataType.name}变化，追踪健康生活`;
-
-      const typeRecords = records[activeDataTypeId] || [];
+      const isAhead = progress >= timeProgress;
+      const statusBadge = progress >= 100 
+        ? '<span class="badge badge-success">已完成</span>' 
+        : isAhead 
+          ? '<span class="badge badge-success">进度良好</span>' 
+          : '<span class="badge badge-warning">需要加油</span>';
 
       container.innerHTML = `
-        <div class="grid">
-          <div class="card">
-            <h2 class="card-title">
-              <span>+</span> 添加记录
-            </h2>
-            <form id="recordForm">
-              <div class="form-group">
-                <label for="recordDate">日期</label>
-                <input type="date" id="recordDate" required>
+        <div class="plan-card">
+          <div class="plan-header">
+            <div>
+              <div class="plan-title">🎯 减重计划</div>
+              <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                ${formatDate(plan.startDate)} - ${formatDate(plan.endDate)}
               </div>
-              <div class="form-group">
-                <label for="recordValue">${dataType.name} (${dataType.unit})</label>
-                <input type="number" id="recordValue" step="0.1" min="0" required placeholder="请输入${dataType.name}">
-              </div>
-              <div class="form-group">
-                <label for="recordNote">备注（可选）</label>
-                <textarea id="recordNote" placeholder="添加备注信息..."></textarea>
-              </div>
-              <button type="submit" class="btn btn-primary" style="width: 100%;">
-                <span>保存记录</span>
-              </button>
-            </form>
-          </div>
-
-          <div class="card">
-            <h2 class="card-title">
-              <span>📈</span> 统计概览
-            </h2>
-            <div class="stats-grid">
-              <div class="stat-card">
-                <div class="stat-value" id="avgValue">-</div>
-                <div class="stat-label">平均值</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value" id="maxValue">-</div>
-                <div class="stat-label">最大值</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value" id="minValue">-</div>
-                <div class="stat-label">最小值</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value" id="trend">--</div>
-                <div class="stat-label">整体趋势</div>
-              </div>
+            </div>
+            <div class="plan-status">
+              ${statusBadge}
+              <button class="btn btn-icon btn-sm" onclick="openPlanModal()" title="编辑计划">✏️</button>
+              <button class="btn btn-icon btn-icon-danger btn-sm" onclick="deletePlan()" title="删除计划">🗑️</button>
             </div>
           </div>
-
-          <div class="card" style="grid-column: 1 / -1;">
-            <h2 class="card-title">
-              <span>📊</span> 数据图表
-            </h2>
-            <div class="chart-tabs">
-              <button class="chart-tab active" data-chart="line">折线图</button>
-              <button class="chart-tab" data-chart="bar">柱状图</button>
-            </div>
-            <div class="chart-container">
-              <canvas id="dataChart"></canvas>
-            </div>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span style="font-size: 0.9rem; color: var(--text-bright);">
+              <strong>${toDisplayValue(currentWeight).toFixed(1)}</strong> ${getUnitLabel()}
+            </span>
+            <span style="font-size: 0.9rem; color: var(--primary-color);">
+              目标: <strong>${toDisplayValue(plan.targetWeight).toFixed(1)}</strong> ${getUnitLabel()}
+            </span>
+          </div>
+          
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: ${progress}%"></div>
+          </div>
+          
+          <div class="progress-info">
+            <span>已减 ${toDisplayValue(currentLoss).toFixed(1)} ${getUnitLabel()}</span>
+            <span>${progress.toFixed(1)}%</span>
+            <span>还需 ${toDisplayValue(Math.max(0, totalLoss - currentLoss)).toFixed(1)} ${getUnitLabel()}</span>
           </div>
 
-          <div class="card" style="grid-column: 1 / -1;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-              <h2 class="card-title">
-                <span>📝</span> 记录列表
-              </h2>
-              <span class="badge badge-success" id="recordCount">0 条记录</span>
+          <div class="plan-details">
+            <div class="plan-detail">
+              <div class="plan-detail-value">${toDisplayValue(plan.startWeight).toFixed(1)}</div>
+              <div class="plan-detail-label">起始体重 (${getUnitLabel()})</div>
             </div>
-            <div class="record-list" id="recordList"></div>
+            <div class="plan-detail">
+              <div class="plan-detail-value">${toDisplayValue(totalLoss).toFixed(1)}</div>
+              <div class="plan-detail-label">目标减重 (${getUnitLabel()})</div>
+            </div>
+            <div class="plan-detail">
+              <div class="plan-detail-value">${daysTotal - daysPassed}</div>
+              <div class="plan-detail-label">剩余天数</div>
+            </div>
           </div>
         </div>
       `;
-
-      document.getElementById('recordDate').value = new Date().toISOString().split('T')[0];
-
-      document.getElementById('recordForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        addRecord();
-      });
-
-      document.querySelectorAll('.chart-tab').forEach(tab => {
-        tab.addEventListener('click', function() {
-          document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
-          this.classList.add('active');
-          const currentDataType = dataTypes.find(t => t.id === activeDataTypeId);
-          const currentRecords = records[activeDataTypeId] || [];
-          
-          if (chartInstance) {
-            chartInstance.destroy();
-            chartInstance = null;
-          }
-          
-          setTimeout(() => {
-            renderChart(this.dataset.chart, currentRecords, currentDataType);
-          }, 50);
-        });
-      });
-
-      renderStats(typeRecords, dataType);
-      renderChart('line', typeRecords, dataType);
-      renderRecordList(typeRecords, dataType);
     }
 
-    function renderStats(typeRecords, dataType) {
-      const stats = getStats(typeRecords);
-      
-      document.getElementById('avgValue').textContent = stats.avg !== '-' ? `${stats.avg} ${dataType.unit}` : '-';
-      document.getElementById('maxValue').textContent = stats.max !== '-' ? `${stats.max} ${dataType.unit}` : '-';
-      document.getElementById('minValue').textContent = stats.min !== '-' ? `${stats.min} ${dataType.unit}` : '-';
-      document.getElementById('trend').textContent = stats.trend;
+    function renderStats() {
+      const stats = getStats();
+
+      document.getElementById('avgValue').textContent = stats.avg !== '-' ? `${toDisplayValue(parseFloat(stats.avg)).toFixed(1)} ${getUnitLabel()}` : '-';
+      document.getElementById('maxValue').textContent = stats.max !== '-' ? `${toDisplayValue(parseFloat(stats.max)).toFixed(1)} ${getUnitLabel()}` : '-';
+      document.getElementById('minValue').textContent = stats.min !== '-' ? `${toDisplayValue(parseFloat(stats.min)).toFixed(1)} ${getUnitLabel()}` : '-';
+      document.getElementById('trend').textContent = stats.trend !== '--' ? (parseFloat(stats.trend) >= 0 ? `+${toDisplayValue(parseFloat(stats.trend)).toFixed(1)}` : `${toDisplayValue(parseFloat(stats.trend)).toFixed(1)}`) : '--';
       document.getElementById('trend').className = `stat-value ${stats.trendClass}`;
-      document.getElementById('recordCount').textContent = `${typeRecords.length} 条记录`;
+      document.getElementById('recordCount').textContent = `${records.length} 条记录`;
     }
 
-    function renderChart(type = 'line', typeRecords, dataType) {
-      const ctx = document.getElementById('dataChart');
+    function renderChart() {
+      const ctx = document.getElementById('weightChart');
       if (!ctx) return;
 
       if (chartInstance) {
         chartInstance.destroy();
       }
 
-      if (!typeRecords || typeRecords.length === 0) {
+      if (!records || records.length === 0) {
         chartInstance = null;
         return;
       }
 
-      const sortedRecords = [...typeRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
-      const labels = sortedRecords.map(r => formatDate(r.date));
-      const data = sortedRecords.map(r => r.value);
+      const sortedRecords = [...records].sort((a, b) => new Date(a.date) - new Date(b.date));
+      const labels = sortedRecords.map(r => formatDateShort(r.date));
+      const data = sortedRecords.map(r => toDisplayValue(r.value));
+
+      const datasets = [{
+        label: `体重 (${getUnitLabel()})`,
+        data,
+        borderColor: '#4EC9B0',
+        backgroundColor: 'rgba(78, 201, 176, 0.2)',
+        tension: 0.4,
+        pointBackgroundColor: '#4EC9B0',
+        pointBorderColor: '#1E1E1E',
+        pointBorderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6
+      }];
+
+      // 如果有计划，添加目标线
+      if (plan) {
+        const planData = generatePlanTargets();
+        if (planData.length > 0) {
+          const targetData = sortedRecords.map(r => {
+            const target = planData.find(p => p.date === r.date);
+            return target ? toDisplayValue(target.targetWeight) : null;
+          });
+
+          datasets.push({
+            label: `目标体重 (${getUnitLabel()})`,
+            data: targetData,
+            borderColor: '#FFA500',
+            backgroundColor: 'rgba(255, 165, 0, 0.1)',
+            borderDash: [5, 5],
+            tension: 0.4,
+            pointRadius: 0,
+            pointHoverRadius: 4
+          });
+        }
+      }
 
       const chartConfig = {
-        type: type,
-        data: {
-          labels,
-          datasets: [{
-            label: `${dataType.name} (${dataType.unit})`,
-            data,
-            borderColor: '#4EC9B0',
-            backgroundColor: 'rgba(78, 201, 176, 0.2)',
-            tension: 0.4,
-            pointBackgroundColor: '#4EC9B0',
-            pointBorderColor: '#1E1E1E',
-            pointBorderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 6
-          }]
-        },
+        type: 'line',
+        data: { labels, datasets },
         options: {
           responsive: true,
           maintainAspectRatio: false,
@@ -1085,14 +1493,14 @@
             tooltip: {
               backgroundColor: 'rgba(37, 37, 38, 0.95)',
               padding: 12,
-              titleFont: { size: 14, color: '#D4D4D4' },
-              bodyFont: { size: 13, color: '#D4D4D4' },
+              titleFont: { size: 14 },
+              bodyFont: { size: 13 },
               borderColor: '#3C3C3C',
               borderWidth: 1,
               cornerRadius: 4,
               callbacks: {
                 label: function(context) {
-                  return `${dataType.name}: ${context.raw} ${dataType.unit}`;
+                  return `${context.dataset.label}: ${context.raw.toFixed(1)} ${getUnitLabel()}`;
                 }
               }
             }
@@ -1104,7 +1512,7 @@
               ticks: {
                 color: '#808080',
                 callback: function(value) {
-                  return value + ' ' + dataType.unit;
+                  return value.toFixed(1) + ' ' + getUnitLabel();
                 }
               }
             },
@@ -1119,28 +1527,28 @@
       chartInstance = new Chart(ctx.getContext('2d'), chartConfig);
     }
 
-    function renderRecordList(typeRecords, dataType) {
+    function renderRecordList() {
       const listContainer = document.getElementById('recordList');
       if (!listContainer) return;
 
-      if (!typeRecords || typeRecords.length === 0) {
+      if (!records || records.length === 0) {
         listContainer.innerHTML = `
           <div class="empty-state" style="padding: 2rem;">
             <span style="font-size: 3rem;">📭</span>
             <p style="margin-top: 0.5rem;">暂无记录</p>
-            <p style="font-size: 0.875rem; margin-top: 0.5rem;">添加第一条${dataType.name}记录开始追踪吧！</p>
+            <p style="font-size: 0.875rem; margin-top: 0.5rem;">添加第一条体重记录开始追踪吧！</p>
           </div>
         `;
         return;
       }
 
-      const sortedRecords = [...typeRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
-      
+      const sortedRecords = [...records].sort((a, b) => new Date(b.date) - new Date(a.date));
+
       listContainer.innerHTML = sortedRecords.map(record => `
         <div class="record-item" data-record-id="${record.id}">
           <div class="record-info">
             <div class="record-date">${formatDate(record.date)}</div>
-            <div class="record-value">${record.value} ${dataType.unit}</div>
+            <div class="record-value">${toDisplayValue(record.value).toFixed(1)} ${getUnitLabel()}</div>
             ${record.note ? `<div class="record-note" title="${record.note}">${record.note}</div>` : ''}
           </div>
           <div class="record-actions">
@@ -1151,82 +1559,226 @@
       `).join('');
     }
 
+    function generatePlanTargets() {
+      if (!plan) return [];
+
+      const targets = [];
+      const startDate = new Date(plan.startDate);
+      const endDate = new Date(plan.endDate);
+      const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+
+      let currentDate = new Date(startDate);
+      let currentWeight = plan.startWeight;
+
+      while (currentDate <= endDate) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        const daysPassed = Math.ceil((currentDate - startDate) / (1000 * 60 * 60 * 24));
+
+        if (plan.planType === 'fixed') {
+          const periodDays = plan.period === 'daily' ? 1 : plan.period === 'weekly' ? 7 : 30;
+          const periodsPassed = Math.floor(daysPassed / periodDays);
+          currentWeight = Math.max(plan.targetWeight, plan.startWeight - (periodsPassed * plan.fixedAmount));
+        } else {
+          const weeklyProgress = daysPassed / 7;
+          currentWeight = plan.startWeight * Math.pow(1 - plan.percentage / 100, weeklyProgress);
+        }
+
+        targets.push({
+          date: dateStr,
+          targetWeight: Math.max(plan.targetWeight, currentWeight)
+        });
+
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      return targets;
+    }
+
+    function renderSchedule() {
+      const container = document.getElementById('scheduleContainer');
+
+      if (!plan) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🎯</div>
+            <h3>暂无减重计划</h3>
+            <p>点击上方"设置计划"按钮开始制定你的减重目标</p>
+          </div>
+        `;
+        return;
+      }
+
+      const planTargets = generatePlanTargets();
+      const today = new Date().toISOString().split('T')[0];
+
+      const periodGroups = [];
+      let currentGroup = [];
+      let periodIndex = 0;
+
+      planTargets.forEach((target, index) => {
+        currentGroup.push(target);
+        
+        const periodDays = plan.period === 'daily' ? 1 : plan.period === 'weekly' ? 7 : 30;
+        if (currentGroup.length >= periodDays || index === planTargets.length - 1) {
+          periodGroups.push({
+            index: periodIndex,
+            targets: currentGroup,
+            startDate: currentGroup[0].date,
+            endDate: currentGroup[currentGroup.length - 1].date,
+            targetWeight: currentGroup[currentGroup.length - 1].targetWeight
+          });
+          currentGroup = [];
+          periodIndex++;
+        }
+      });
+
+      container.innerHTML = `
+        <div class="plan-schedule">
+          ${periodGroups.map(group => {
+            const actualRecord = records.find(r => r.date >= group.startDate && r.date <= group.endDate);
+            const isPast = group.endDate < today;
+            const isCurrent = group.startDate <= today && group.endDate >= today;
+            
+            let statusClass = 'status-pending';
+            let statusText = '待完成';
+            
+            if (actualRecord) {
+              const isAchieved = actualRecord.value <= group.targetWeight;
+              statusClass = isAchieved ? 'status-achieved' : 'status-missed';
+              statusText = isAchieved ? '已达成' : '未达成';
+            } else if (isPast) {
+              statusClass = 'status-missed';
+              statusText = '未记录';
+            }
+
+            return `
+              <div class="schedule-item" style="${isCurrent ? 'background: rgba(78, 201, 176, 0.05); border-radius: 0.25rem; padding: 0.5rem;' : ''}">
+                <div>
+                  <div class="schedule-date">${formatDate(group.startDate)} ${group.startDate !== group.endDate ? `- ${formatDateShort(group.endDate)}` : ''}</div>
+                  <div class="schedule-target">目标: ${toDisplayValue(group.targetWeight).toFixed(1)} ${getUnitLabel()}</div>
+                </div>
+                <div style="text-align: right;">
+                  ${actualRecord ? `<div class="schedule-actual">实际: ${toDisplayValue(actualRecord.value).toFixed(1)} ${getUnitLabel()}</div>` : ''}
+                  <span class="schedule-status ${statusClass}">${statusText}</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
     function addRecord() {
       const date = document.getElementById('recordDate').value;
-      const value = parseFloat(document.getElementById('recordValue').value);
+      const displayValue = parseFloat(document.getElementById('recordValue').value);
       const note = document.getElementById('recordNote').value;
+
+      const kgValue = toKgValue(displayValue);
 
       const newRecord = {
         id: generateId(),
         date,
-        value,
+        value: kgValue,
         note,
         createdAt: Date.now()
       };
 
-      if (!records[activeDataTypeId]) {
-        records[activeDataTypeId] = [];
-      }
-      records[activeDataTypeId].push(newRecord);
+      records.push(newRecord);
       saveRecords(records);
 
       const form = document.getElementById('recordForm');
       form.reset();
       document.getElementById('recordDate').value = new Date().toISOString().split('T')[0];
 
-      const dataType = dataTypes.find(t => t.id === activeDataTypeId);
-      const typeRecords = records[activeDataTypeId];
-      renderStats(typeRecords, dataType);
-      renderChart('line', typeRecords, dataType);
-      renderRecordList(typeRecords, dataType);
+      renderStats();
+      renderChart();
+      renderRecordList();
+      renderPlan();
+      renderSchedule();
     }
 
-    function openAddDataTypeModal() {
-      document.getElementById('addDataTypeForm').reset();
-      document.getElementById('addDataTypeModal').classList.add('show');
+    function openPlanModal() {
+      const modal = document.getElementById('planModal');
+      
+      if (plan) {
+        document.getElementById('planStartWeight').value = toDisplayValue(plan.startWeight).toFixed(1);
+        document.getElementById('planTargetWeight').value = toDisplayValue(plan.targetWeight).toFixed(1);
+        document.getElementById('planStartDate').value = plan.startDate;
+        document.getElementById('planEndDate').value = plan.endDate;
+        document.getElementById('planPeriod').value = plan.period;
+        
+        document.querySelectorAll('input[name="planType"]').forEach(radio => {
+          radio.checked = radio.value === plan.planType;
+        });
+        
+        document.querySelectorAll('.radio-option').forEach(opt => {
+          opt.classList.toggle('active', opt.dataset.type === plan.planType);
+        });
+        
+        if (plan.planType === 'fixed') {
+          document.getElementById('fixedAmountGroup').style.display = 'block';
+          document.getElementById('percentageGroup').style.display = 'none';
+          document.getElementById('planFixedAmount').value = toDisplayValue(plan.fixedAmount).toFixed(1);
+        } else {
+          document.getElementById('fixedAmountGroup').style.display = 'none';
+          document.getElementById('percentageGroup').style.display = 'block';
+          document.getElementById('planPercentage').value = plan.percentage;
+        }
+      } else {
+        document.getElementById('planForm').reset();
+        document.getElementById('planStartDate').value = new Date().toISOString().split('T')[0];
+        
+        if (records.length > 0) {
+          const latestRecord = [...records].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+          document.getElementById('planStartWeight').value = toDisplayValue(latestRecord.value).toFixed(1);
+        }
+        
+        document.querySelectorAll('.radio-option').forEach(opt => {
+          opt.classList.toggle('active', opt.dataset.type === 'fixed');
+        });
+        document.getElementById('fixedAmountGroup').style.display = 'block';
+        document.getElementById('percentageGroup').style.display = 'none';
+      }
+      
+      modal.classList.add('show');
     }
 
-    function closeAddDataTypeModal() {
-      document.getElementById('addDataTypeModal').classList.remove('show');
+    function closePlanModal() {
+      document.getElementById('planModal').classList.remove('show');
     }
 
-    function openEditDataTypeModal(typeId) {
-      const dataType = dataTypes.find(t => t.id === typeId);
-      if (dataType) {
-        document.getElementById('editDataTypeId').value = typeId;
-        document.getElementById('editDataTypeName').value = dataType.name;
-        document.getElementById('editDataTypeUnit').value = dataType.unit;
-        document.getElementById('editDataTypeEmoji').value = dataType.emoji;
-        document.getElementById('editDataTypeModal').classList.add('show');
+    function selectPlanType(type) {
+      document.querySelectorAll('.radio-option').forEach(opt => {
+        opt.classList.toggle('active', opt.dataset.type === type);
+      });
+      
+      if (type === 'fixed') {
+        document.getElementById('fixedAmountGroup').style.display = 'block';
+        document.getElementById('percentageGroup').style.display = 'none';
+      } else {
+        document.getElementById('fixedAmountGroup').style.display = 'none';
+        document.getElementById('percentageGroup').style.display = 'block';
       }
     }
 
-    function closeEditDataTypeModal() {
-      document.getElementById('editDataTypeModal').classList.remove('show');
-    }
-
-    function openDeleteDataTypeModal(typeId) {
-      deleteDataTypeId = typeId;
-      document.getElementById('deleteDataTypeModal').classList.add('show');
-    }
-
-    function closeDeleteDataTypeModal() {
-      document.getElementById('deleteDataTypeModal').classList.remove('show');
-      deleteDataTypeId = null;
+    function deletePlan() {
+      if (confirm('确定要删除减重计划吗？此操作无法撤销！')) {
+        localStorage.removeItem(STORAGE_KEY_PLAN);
+        plan = null;
+        renderPlan();
+        renderSchedule();
+        renderChart();
+      }
     }
 
     function openEditRecordModal(recordId) {
-      const typeRecords = records[activeDataTypeId] || [];
-      const record = typeRecords.find(r => r.id === recordId);
-      const dataType = dataTypes.find(t => t.id === activeDataTypeId);
-      
-      if (record && dataType) {
+      const record = records.find(r => r.id === recordId);
+
+      if (record) {
         document.getElementById('editRecordId').value = recordId;
         document.getElementById('editRecordDate').value = record.date;
-        document.getElementById('editRecordValue').value = record.value;
+        document.getElementById('editRecordValue').value = toDisplayValue(record.value).toFixed(1);
         document.getElementById('editRecordNote').value = record.note || '';
-        document.getElementById('editRecordLabelName').textContent = dataType.name;
-        document.getElementById('editRecordLabelUnit').textContent = dataType.unit;
         document.getElementById('editRecordModal').classList.add('show');
       }
     }
@@ -1245,128 +1797,136 @@
       deleteRecordId = null;
     }
 
-    function setQuickTemplate(name, unit, emoji) {
-      document.getElementById('newDataTypeName').value = name;
-      document.getElementById('newDataTypeUnit').value = unit;
-      document.getElementById('newDataTypeEmoji').value = emoji;
-    }
-
-    function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('open');
-    }
-
-    function closeSidebar() {
-      document.getElementById('sidebar').classList.remove('open');
-    }
-
-    document.getElementById('addDataTypeForm').addEventListener('submit', function(e) {
-      e.preventDefault();
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
       
-      const name = document.getElementById('newDataTypeName').value.trim();
-      const unit = document.getElementById('newDataTypeUnit').value.trim();
-      let emoji = document.getElementById('newDataTypeEmoji').value.trim() || defaultEmojis[Math.floor(Math.random() * defaultEmojis.length)];
+      document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+      document.getElementById(`${tabName}Tab`).classList.add('active');
+      
+      if (tabName === 'schedule') {
+        renderSchedule();
+      }
+    }
 
-      const newType = {
+    // 事件监听
+    document.getElementById('recordForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      addRecord();
+    });
+
+    document.getElementById('planForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const startWeightDisplay = parseFloat(document.getElementById('planStartWeight').value);
+      const targetWeightDisplay = parseFloat(document.getElementById('planTargetWeight').value);
+      const startDate = document.getElementById('planStartDate').value;
+      const endDate = document.getElementById('planEndDate').value;
+      const period = document.getElementById('planPeriod').value;
+      const planType = document.querySelector('input[name="planType"]:checked').value;
+
+      const startWeight = toKgValue(startWeightDisplay);
+      const targetWeight = toKgValue(targetWeightDisplay);
+
+      if (targetWeight >= startWeight) {
+        alert('目标体重必须小于起始体重！');
+        return;
+      }
+
+      if (new Date(endDate) <= new Date(startDate)) {
+        alert('结束日期必须晚于开始日期！');
+        return;
+      }
+
+      const newPlan = {
         id: generateId(),
-        name,
-        unit,
-        emoji
+        startWeight,
+        targetWeight,
+        startDate,
+        endDate,
+        period,
+        planType,
+        fixedAmount: planType === 'fixed' ? toKgValue(parseFloat(document.getElementById('planFixedAmount').value)) : null,
+        percentage: planType === 'percentage' ? parseFloat(document.getElementById('planPercentage').value) : null,
+        createdAt: Date.now()
       };
 
-      dataTypes.push(newType);
-      saveDataTypes(dataTypes);
-      
-      closeAddDataTypeModal();
-      renderDataTypeList();
-      selectDataType(newType.id);
-    });
-
-    document.getElementById('editDataTypeForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      
-      const typeId = document.getElementById('editDataTypeId').value;
-      const name = document.getElementById('editDataTypeName').value.trim();
-      const unit = document.getElementById('editDataTypeUnit').value.trim();
-      let emoji = document.getElementById('editDataTypeEmoji').value.trim() || '📊';
-
-      const updatedTypes = dataTypes.map(t => 
-        t.id === typeId ? { ...t, name, unit, emoji } : t
-      );
-      saveDataTypes(updatedTypes);
-      
-      closeEditDataTypeModal();
-      renderDataTypeList();
-      renderContent();
-    });
-
-    document.getElementById('confirmDeleteDataType').addEventListener('click', function() {
-      if (deleteDataTypeId) {
-        const updatedTypes = dataTypes.filter(t => t.id !== deleteDataTypeId);
-        const updatedRecords = { ...records };
-        delete updatedRecords[deleteDataTypeId];
-        
-        saveDataTypes(updatedTypes);
-        saveRecords(updatedRecords);
-        
-        if (activeDataTypeId === deleteDataTypeId) {
-          saveActiveDataTypeId(updatedTypes.length > 0 ? updatedTypes[0].id : null);
-        }
-        
-        closeDeleteDataTypeModal();
-        renderDataTypeList();
-        renderContent();
-      }
+      savePlan(newPlan);
+      closePlanModal();
+      renderPlan();
+      renderChart();
+      renderSchedule();
     });
 
     document.getElementById('editRecordForm').addEventListener('submit', function(e) {
       e.preventDefault();
-      
+
       const recordId = document.getElementById('editRecordId').value;
       const date = document.getElementById('editRecordDate').value;
-      const value = parseFloat(document.getElementById('editRecordValue').value);
+      const displayValue = parseFloat(document.getElementById('editRecordValue').value);
       const note = document.getElementById('editRecordNote').value;
 
-      const typeRecords = records[activeDataTypeId] || [];
-      const updatedRecords = typeRecords.map(r => 
-        r.id === recordId ? { ...r, date, value, note } : r
+      const kgValue = toKgValue(displayValue);
+
+      const updatedRecords = records.map(r =>
+        r.id === recordId ? { ...r, date, value: kgValue, note } : r
       );
-      records[activeDataTypeId] = updatedRecords;
-      saveRecords(records);
+      saveRecords(updatedRecords);
 
       closeEditRecordModal();
-      const dataType = dataTypes.find(t => t.id === activeDataTypeId);
-      renderStats(updatedRecords, dataType);
-      renderChart('line', updatedRecords, dataType);
-      renderRecordList(updatedRecords, dataType);
+      renderStats();
+      renderChart();
+      renderRecordList();
+      renderPlan();
+      renderSchedule();
     });
 
     document.getElementById('confirmDeleteRecord').addEventListener('click', function() {
       if (deleteRecordId) {
-        const typeRecords = records[activeDataTypeId] || [];
-        const filteredRecords = typeRecords.filter(r => r.id !== deleteRecordId);
-        records[activeDataTypeId] = filteredRecords;
-        saveRecords(records);
-        
+        const filteredRecords = records.filter(r => r.id !== deleteRecordId);
+        saveRecords(filteredRecords);
+
         closeDeleteRecordModal();
-        const dataType = dataTypes.find(t => t.id === activeDataTypeId);
-        renderStats(filteredRecords, dataType);
-        renderChart('line', filteredRecords, dataType);
-        renderRecordList(filteredRecords, dataType);
+        renderStats();
+        renderChart();
+        renderRecordList();
+        renderPlan();
+        renderSchedule();
       }
     });
 
+    // 模态框点击外部关闭
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.classList.remove('show');
+        }
+      });
+    });
+
+    // 初始化
     document.addEventListener('DOMContentLoaded', function() {
-      dataTypes = getDataTypes();
       records = getRecords();
-      activeDataTypeId = getActiveDataTypeId();
-      
-      if (!activeDataTypeId && dataTypes.length > 0) {
-        activeDataTypeId = dataTypes[0].id;
-        saveActiveDataTypeId(activeDataTypeId);
-      }
-      
-      renderDataTypeList();
-      renderContent();
+      plan = getPlan();
+      currentUnit = getUnit();
+
+      // 初始化日期选择器
+      initDatePicker('recordDate', 'recordDatePanel');
+      initDatePicker('planStartDate', 'planStartDatePanel');
+      initDatePicker('planEndDate', 'planEndDatePanel');
+      initDatePicker('editRecordDate', 'editRecordDatePanel');
+
+      // 设置默认日期
+      selectToday('recordDate', 'recordDatePanel');
+
+      document.getElementById('btnJin').classList.toggle('active', currentUnit === 'jin');
+      document.getElementById('btnKg').classList.toggle('active', currentUnit === 'kg');
+
+      updateUnitLabels();
+      renderPlan();
+      renderStats();
+      renderChart();
+      renderRecordList();
     });
   </script>
 </body>
